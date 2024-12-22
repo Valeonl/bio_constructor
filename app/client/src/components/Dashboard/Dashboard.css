@@ -1,0 +1,72 @@
+.dashboard {
+  height: 100%;
+  padding: 20px;
+  background: #f5f5f5;
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+}
+
+.dashboard-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: minmax(200px, 1fr);
+  gap: 20px;
+  padding: 20px;
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  overflow: hidden;
+}
+
+/* Медиа-запросы для адаптивности */
+@media (max-width: 1200px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, minmax(200px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(4, minmax(200px, 1fr));
+    gap: 15px;
+    padding: 15px;
+  }
+
+  .dashboard {
+    padding: 10px;
+  }
+}
+
+/* Улучшаем отображение виджетов на мобильных устройствах */
+@media (max-width: 480px) {
+  .widget {
+    padding: 10px;
+  }
+
+  .heart-rate-widget .widget-content {
+    padding: 15px;
+    gap: 15px;
+  }
+
+  .heart-rate-value {
+    font-size: 48px;
+  }
+
+  .heart-rate-unit {
+    font-size: 18px;
+  }
+
+  .heartbeat-icon {
+    width: 60px;
+    height: 60px;
+  }
+
+  .heart-rate-status .status {
+    padding: 6px 15px;
+    font-size: 14px;
+  }
+}

@@ -1,0 +1,262 @@
+.puzzle-piece {
+  position: relative;
+  background: white;
+  border-radius: 12px;
+  padding: 15px;
+  margin: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+.puzzle-piece:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Кнопка удаления - упрощенные стили */
+.delete-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(244, 67, 54, 0.1);
+  color: #f44336;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  transform: scale(0.8);
+  transition: all 0.2s ease-out;
+  z-index: 10;
+}
+
+/* Показываем кнопку при наведении на puzzle-piece */
+.puzzle-piece:hover .delete-button {
+  transform: scale(1);
+}
+
+/* Эффект при наведении на саму кнопку */
+.delete-button:hover {
+  background: rgba(244, 67, 54, 0.2);
+  transform: scale(1.1);
+  box-shadow: 0 2px 4px rgba(244, 67, 54, 0.2);
+}
+
+/* Эффект при нажатии */
+.delete-button:active {
+  transform: scale(0.95);
+  background: rgba(244, 67, 54, 0.3);
+}
+
+/* Контролы блока (часики и редактирование) */
+.piece-controls {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  animation: fadeIn 0.3s ease;
+}
+
+.puzzle-piece:hover .piece-controls {
+  opacity: 1;
+}
+
+.duration-button,
+.edit-button {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(33, 150, 243, 0.1);
+  color: #2196F3;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.duration-button:hover,
+.edit-button:hover {
+  background: rgba(33, 150, 243, 0.2);
+  transform: scale(1.1);
+}
+
+/* Поле ввода длительности */
+.duration-input {
+  position: absolute;
+  top: -45px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  padding: 8px 12px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 1000;
+}
+
+.duration-input input {
+  width: 60px;
+  padding: 6px 10px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+  text-align: right;
+  outline: none;
+}
+
+.duration-input input:focus {
+  border-color: #2196F3;
+  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
+}
+
+.duration-input span {
+  color: #666;
+  font-size: 14px;
+  user-select: none;
+}
+
+/* Добавим подсказку */
+.duration-input::after {
+  content: 'От 1 до 3600 секунд';
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: #666;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.duration-input:hover::after {
+  opacity: 1;
+}
+
+/* Попап редактирования пользовательского блока */
+.custom-edit-popup {
+  position: absolute;
+  top: -150px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  width: 250px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 100;
+}
+
+.custom-edit-popup input,
+.custom-edit-popup textarea {
+  padding: 8px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.3s ease;
+}
+
+.custom-edit-popup input:focus,
+.custom-edit-popup textarea:focus {
+  border-color: #2196F3;
+  outline: none;
+}
+
+.custom-edit-popup textarea {
+  height: 80px;
+  resize: none;
+}
+
+.custom-edit-popup button {
+  background: #4CAF50;
+  color: white;
+  border: none;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.custom-edit-popup button:hover {
+  background: #45a049;
+  transform: translateY(-1px);
+}
+
+/* Иконка и заголовок блока */
+.piece-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.piece-title {
+  font-size: 14px;
+  color: #333;
+  text-align: center;
+  font-weight: 500;
+}
+
+/* Стили для пользовательского блока */
+.puzzle-piece[data-type="custom"] {
+  background: linear-gradient(135deg, #f5f7fa 0%, #e4e7eb 100%);
+  border: 2px dashed #b0bec5;
+}
+
+.puzzle-piece[data-type="custom"]:hover {
+  border-color: #90a4ae;
+  background: linear-gradient(135deg, #f5f7fa 0%, #dde1e5 100%);
+}
+
+/* Анимации */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.piece-controls {
+  animation: fadeIn 0.3s ease;
+}
+
+.piece-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.piece-duration {
+  font-family: monospace;
+  font-size: 14px;
+  color: #666;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 4px 8px;
+  border-radius: 10px;
+  min-width: 70px;
+  text-align: center;
+}
+
+/* Обновим стили для пользовательского блока */
+.puzzle-piece[data-type="custom"] .piece-duration {
+  background: rgba(255, 255, 255, 0.5);
+} 

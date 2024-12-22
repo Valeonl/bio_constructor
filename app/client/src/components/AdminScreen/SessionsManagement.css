@@ -1,0 +1,196 @@
+.sessions-management {
+  padding: 20px;
+}
+
+.sessions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.clear-sessions-button {
+  background: #f44336;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+
+.clear-sessions-button:hover {
+  background: #d32f2f;
+}
+
+.sessions-list {
+  display: grid;
+  gap: 15px;
+}
+
+.session-card {
+  background: white;
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.session-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.session-card.active {
+  border: 2px solid #4CAF50;
+}
+
+.session-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.session-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.session-id {
+  font-weight: 500;
+  color: #333;
+}
+
+.session-date {
+  font-size: 12px;
+  color: #666;
+}
+
+.active-badge {
+  background: #e8f5e9;
+  color: #4CAF50;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.session-blocks {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+}
+
+.blocks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.block-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  background: #f5f5f5;
+  border-radius: 6px;
+}
+
+.block-icon {
+  width: 32px;
+  height: 32px;
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+}
+
+.block-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.block-name {
+  font-weight: 500;
+  color: #333;
+}
+
+.block-duration {
+  font-size: 12px;
+  color: #666;
+}
+
+.last-block-badge {
+  background: #fff3e0;
+  color: #f57c00;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+}
+
+.no-sessions {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+}
+
+.no-sessions i {
+  font-size: 48px;
+  margin-bottom: 10px;
+  opacity: 0.5;
+}
+
+.session-card.new-session {
+  animation: highlight 2s ease-in-out;
+  border-left: 4px solid #4CAF50;
+}
+
+.session-badges {
+  display: flex;
+  gap: 8px;
+}
+
+.new-badge {
+  background: #e8f5e9;
+  color: #4CAF50;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes highlight {
+  0% {
+    background: rgba(76, 175, 80, 0.1);
+  }
+  100% {
+    background: white;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+} 
