@@ -29,3 +29,6 @@
 ![image](https://github.com/user-attachments/assets/087e52df-ed11-4498-b4b4-cfea29963ac1)
 ## Управление сессиями
 ![image](https://github.com/user-attachments/assets/4f3b6825-58a8-4617-b93d-5c2576b855ff)
+
+# Приложение для моделирования сигнала ЭКГ
+![image](https://github.com/user-attachments/assets/4acf63b7-b6b0-4617-a5b5-0f3f811fe552)
