@@ -253,6 +253,8 @@ function SubjectScreen() {
         return 'th-large';
       case 'dino':
         return 'dragon';
+      case 'custom':
+        return 'hammer';
       default:
         return 'question';
     }
@@ -266,6 +268,8 @@ function SubjectScreen() {
         return 'Игра Тетрис';
       case 'dino':
         return 'Игра Динозаврик';
+      case 'custom':
+        return 'Пользовательский блок';
       default:
         return 'Неизвестный этап';
     }

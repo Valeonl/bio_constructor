@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { useDrop } from 'react-dnd';
 import PuzzlePiece from './PuzzlePiece';
 
-function PuzzleSlot({ index, piece, onDrop, onRemove, onSetLast, isLast, isStart, isEmpty, isDragging, availableBlocks }) {
+function PuzzleSlot({ index, piece, onDrop, onRemove, onSetLast, isLast, isStart, isEmpty, isDragging, availableBlocks, onSetDuration }) {
   const ref = useRef(null);
 
   const [{ isOver }, drop] = useDrop(() => ({
@@ -79,6 +79,8 @@ function PuzzleSlot({ index, piece, onDrop, onRemove, onSetLast, isLast, isStart
           onDrop={onDrop}
           availableBlocks={availableBlocks}
           isInserting={piece.isInserting || false}
+          onSetDuration={onSetDuration}
+          duration={piece.duration}
         />
       )}
     </div>

@@ -321,7 +321,10 @@ def determine_step(status):
 @app.route('/api/session/save', methods=['POST'])
 def save_session():
     try:
-        blocks = request.json.get('blocks')
+        data = request.json
+        blocks = data.get('blocks')
+        session_id = data.get('session_id')  # Получаем session_id из запроса
+        
         if not blocks:
             return jsonify({'error': 'No blocks provided'}), 400
         
@@ -330,11 +333,27 @@ def save_session():
             if 'type' not in block:
                 return jsonify({'error': 'Missing type in block'}), 400
         
-        session_id = db.save_session(blocks)
-        return jsonify({
-            'status': 'success',
-            'session_id': session_id
-        })
+        if session_id:
+            # Если есть session_id, обновляем существующую сессию
+            db.update_session(session_id, blocks)
+            return jsonify({
+                'status': 'success',
+                'session': {
+                    'id': session_id,
+                    'blocks': blocks
+                }
+            })
+        else:
+            # Если session_id нет, создаём новую сессию
+            new_session_id = db.save_session(blocks)
+            return jsonify({
+                'status': 'success',
+                'session': {
+                    'id': new_session_id,
+                    'blocks': blocks
+                }
+            })
+            
     except Exception as e:
         print(f"Error in save_session: {str(e)}")
         return jsonify({'error': str(e)}), 500

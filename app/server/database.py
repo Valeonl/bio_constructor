@@ -115,7 +115,8 @@ class Database:
             block_types = [
                 ('calm', 'Спокойный этап', 'Этап для расслабления и отдыха', 120),
                 ('tetris', 'Игра Тетрис', 'Классическая игра Тетрис', 60),
-                ('dino', 'Игра Динозаврик', 'Игра в стиле Chrome Dino', 60)
+                ('dino', 'Игра Динозаврик', 'Игра в стиле Chrome Dino', 60),
+                ('custom', 'Пользовательский блок', 'Настраиваемый блок для произвольных действий', 60)
             ]
             
             cursor.executemany('''
@@ -371,7 +372,7 @@ class Database:
             return cursor.fetchall()
 
     def ensure_subject_exists(self, ip_address):
-        """Создает запись для IP если её ��, со статусом 'not_connected'"""
+        """Создает запись для IP если её нет, со статусом 'not_connected'"""
         with self.get_connection() as conn:
             try:
                 cursor = conn.cursor()
@@ -705,4 +706,56 @@ class Database:
                 print(f"  - error: {e}")
                 conn.rollback()
                 raise
+
+    def update_session(self, session_id, blocks):
+        """Обновляет существующую сессию"""
+        print(f"\nОбновление сессии {session_id}")
+        print("Новые блоки:", blocks)
+        
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            try:
+                # Удаляем старые блоки сессии
+                cursor.execute(
+                    "DELETE FROM session_blocks WHERE session_id = ?",
+                    (session_id,)
+                )
+                
+                # Обновляем время модификации сессии
+                cursor.execute('''
+                    UPDATE sessions 
+                    SET modified_at = CURRENT_TIMESTAMP 
+                    WHERE session_id = ?
+                ''', (session_id,))
+                
+                # Вставляем новые блоки
+                for index, block in enumerate(blocks):
+                    block_type_id = self.get_block_type_id(block['type'])
+                    duration = block.get('duration', 60)
+                    
+                    cursor.execute('''
+                        INSERT INTO session_blocks (
+                            session_id, 
+                            block_type_id, 
+                            order_index,
+                            duration,
+                            is_last
+                        )
+                        VALUES (?, ?, ?, ?, ?)
+                    ''', (
+                        session_id,
+                        block_type_id,
+                        index,
+                        duration,
+                        block.get('is_last', False)
+                    ))
+                
+                conn.commit()
+                print("Сессия успешно обновлена")
+                return True
+                
+            except Exception as e:
+                print(f"Ошибка при обновлении сессии: {str(e)}")
+                conn.rollback()
+                raise e
   

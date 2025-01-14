@@ -110,26 +110,31 @@
 }
 
 .canvas-controls button {
-  width: 40px;
+  min-width: 40px;
   height: 40px;
   border: none;
-  border-radius: 50%;
+  border-radius: 20px;
   background: white;
   box-shadow: 0 2px 5px rgba(0,0,0,0.2);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: 14px;
   color: #666;
   transition: all 0.3s ease;
+  padding: 0 15px;
+  white-space: nowrap;
 }
 
-.canvas-controls button:last-child {
-  width: auto;
-  border-radius: 20px;
-  padding: 0 15px;
-  font-size: 14px;
+/* Специальные стили для кнопок + и - */
+.canvas-controls button:nth-child(1),
+.canvas-controls button:nth-child(2) {
+  min-width: 40px;
+  width: 40px;
+  padding: 0;
+  font-size: 20px;
+  border-radius: 50%;
 }
 
 .canvas-controls button:hover {
@@ -158,6 +163,8 @@
   align-items: center;
   justify-content: center;
   cursor: move;
+  text-align: center;
+  padding: 10px;
 }
 
 .puzzle-piece::before,
@@ -168,12 +175,17 @@
 .piece-icon {
   font-size: 32px;
   margin-bottom: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .piece-title {
   font-size: 14px;
   text-align: center;
-  max-width: 80%;
+  max-width: 90%;
+  margin: 0 auto;
+  line-height: 1.2;
 }
 
 .puzzle-slots {
@@ -193,7 +205,7 @@
 .puzzle-slot {
   position: relative;
   min-width: 120px;
-  height: 120px;
+  height: 140px;
   background: transparent;
   transition: all 0.3s ease;
   border: none;
@@ -209,16 +221,19 @@
   display: none;
   min-width: 120px;
   height: 120px;
-  background: rgba(76, 175, 80, 0.1);
-  border: 2px dashed #4CAF50;
+  background: transparent;
+  border: none;
   position: relative;
 }
 
-/* Показываем пустой слот только при перетаскивании */
+/* Показываем пустой слот при перетаскивании */
 .puzzle-slot.empty.show {
   display: flex;
   justify-content: center;
   align-items: center;
+  min-height: 120px;
+  border: 2px dashed #4CAF50;
+  background: rgba(76, 175, 80, 0.1);
 }
 
 /* Стили для значка плюса */
@@ -232,7 +247,8 @@
 /* Подсветка при наведении */
 .puzzle-slot.empty.over {
   background: rgba(76, 175, 80, 0.2);
-  border-style: solid;
+  border: 2px dashed #4CAF50;
+  height: 120px;
 }
 
 /* Убираем все возможные границы при наведении */
@@ -709,6 +725,8 @@
   align-items: center;
   justify-content: center;
   cursor: move;
+  text-align: center;
+  padding: 10px;
 }
 
 /* Выступ справа для начального элемента */
@@ -1240,39 +1258,16 @@
   line-height: 1.2;
 }
 
-/* Стили для пользовательского блока */
-.puzzle-piece[data-type="custom"] {
-  width: 120px;
-  height: 120px;
-  background: white;
-  border: 2px solid #90a4ae;
-  border-radius: 12px;
-  padding: 15px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  cursor: grab;
-  transition: all 0.3s ease;
-}
 
-.puzzle-piece[data-type="custom"]:hover {
-  border-color: #546e7a;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  transform: translateY(-2px);
-}
-
-.puzzle-piece[data-type="custom"] .piece-icon {
-  font-size: 24px;
-  color: #546e7a;
-}
-
-.puzzle-piece[data-type="custom"] .piece-title {
-  font-size: 14px;
-  color: #546e7a;
-  text-align: center;
-  font-weight: 500;
+@keyframes insertPiece {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Стили для drag handle */
@@ -1387,5 +1382,598 @@
 .duration-input span {
   color: #666;
   font-size: 12px;
+}
+
+/* Добавляем стили для модального окна сохранения */
+.save-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.save-modal-overlay.fade-out {
+  opacity: 0;
+}
+
+.save-modal {
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  text-align: center;
+  min-width: 300px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  animation: slideUp 0.3s ease;
+  max-width: 400px;
+  margin: 20px;
+}
+
+.save-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #4CAF50;
+  border-radius: 50%;
+  margin: 0 auto 20px;
+  animation: spin 1s linear infinite;
+}
+
+.save-success {
+  color: #4CAF50;
+  font-size: 48px;
+  margin-bottom: 20px;
+  animation: scaleIn 0.3s ease;
+}
+
+.save-error {
+  color: #f44336;
+  font-size: 48px;
+  margin-bottom: 20px;
+  animation: scaleIn 0.3s ease;
+}
+
+.save-modal p {
+  color: #333;
+  font-size: 16px;
+  margin: 0 0 10px 0;
+  line-height: 1.4;
+}
+
+@keyframes fadeIn {
+  from { 
+    opacity: 0;
+  }
+  to { 
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes scaleIn {
+  from { 
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to { 
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Добавляем стили для кнопок подтверждения сброса */
+.reset-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.reset-buttons button {
+  padding: 8px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.reset-buttons .cancel-button {
+  background: transparent;
+  border: 1px solid #666;
+  color: #666;
+}
+
+.reset-buttons .cancel-button:hover {
+  background: #f5f5f5;
+}
+
+.reset-buttons .confirm-button {
+  background: #f44336;
+  color: white;
+  border: none;
+}
+
+.reset-buttons .confirm-button:hover {
+  background: #d32f2f;
+}
+
+.reset-warning {
+  color: #ff9800;
+  font-size: 48px;
+  margin-bottom: 20px;
+  animation: scaleIn 0.3s ease;
+}
+
+/* Обновляем стили модального окна */
+.save-modal {
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  text-align: center;
+  min-width: 300px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  animation: slideUp 0.3s ease;
+  max-width: 400px;
+  margin: 20px;
+}
+
+.save-modal p {
+  color: #333;
+  font-size: 16px;
+  margin: 0 0 10px 0;
+  line-height: 1.4;
+}
+
+/* Обновляем стили для модального окна сброса */
+.reset-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(244, 67, 54, 0.1); /* Красноватый фон */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.reset-modal-overlay.fade-out {
+  opacity: 0;
+}
+
+.reset-modal {
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  text-align: center;
+  min-width: 300px;
+  box-shadow: 0 4px 20px rgba(244, 67, 54, 0.2); /* Красноватая тень */
+  animation: slideUp 0.3s ease;
+  max-width: 400px;
+  margin: 20px;
+  border: 2px solid rgba(244, 67, 54, 0.1); /* Красноватая рамка */
+}
+
+.reset-warning {
+  color: #f44336; /* Красный цвет для предупреждения */
+  font-size: 48px;
+  margin-bottom: 20px;
+  animation: scaleIn 0.3s ease;
+}
+
+.reset-message {
+  color: #d32f2f;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 10px 0;
+}
+
+.reset-submessage {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 20px;
+  font-style: italic;
+}
+
+.reset-buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 25px;
+}
+
+.reset-buttons .cancel-button {
+  background: transparent;
+  border: 1px solid #666;
+  color: #666;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.reset-buttons .cancel-button:hover {
+  background: #f5f5f5;
+}
+
+.reset-buttons .confirm-button {
+  background: #f44336;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.reset-buttons .confirm-button:hover {
+  background: #d32f2f;
+}
+
+.reset-buttons .confirm-button i {
+  font-size: 16px;
+}
+
+.custom-block-editor {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  max-width: 500px;
+  width: 100%;
+}
+
+.custom-block-editor h3 {
+  margin-bottom: 20px;
+  color: #333;
+  text-align: center;
+}
+
+.editor-field {
+  margin-bottom: 15px;
+}
+
+.editor-field label {
+  display: block;
+  margin-bottom: 5px;
+  color: #666;
+  font-size: 14px;
+}
+
+.editor-field input,
+.editor-field select,
+.editor-field textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.editor-field textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.editor-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.editor-buttons button {
+  padding: 8px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.editor-buttons .cancel-button {
+  background: transparent;
+  border: 1px solid #666;
+  color: #666;
+}
+
+.editor-buttons .save-button {
+  background: #4CAF50;
+  color: white;
+  border: none;
+}
+
+.editor-buttons .cancel-button:hover {
+  background: #f5f5f5;
+}
+
+.editor-buttons .save-button:hover {
+  background: #45a049;
+}
+
+.custom-block {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.custom-block .action-type-icon {
+  font-size: 20px;
+  color: #666;
+}
+
+.custom-block .block-info {
+  flex: 1;
+}
+
+.custom-block .block-title {
+  font-weight: 600;
+  color: #333;
+}
+
+.custom-block .block-description {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+}
+
+/* Стили для описания */
+.piece-description {
+  font-size: 12px;
+  color: #666;
+  text-align: center;
+  margin: 4px auto 0;
+  max-width: 90%;
+  line-height: 1.2;
+}
+
+/* Обновляем стили для контейнера содержимого блока */
+.piece-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  padding-bottom: 25px; /* Оставляем место для длительности */
+}
+
+/* Стили для кнопки информации */
+.info-button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 1001; /* Увеличиваем z-index */
+}
+
+.info-button:hover {
+  background: #f5f5f5;
+  transform: scale(1.1);
+}
+
+.info-button i {
+  font-size: 20px;
+  color: #666;
+}
+
+/* Стили для модального окна информации */
+.info-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.info-modal {
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.info-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.info-modal-header h3 {
+  margin: 0;
+  color: #333;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #666;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.info-modal-content {
+  padding: 10px 0;
+}
+
+.info-loading {
+  text-align: center;
+  padding: 20px;
+}
+
+.info-error {
+  color: #f44336;
+  text-align: center;
+  padding: 20px;
+}
+
+.session-id {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.blocks-info {
+  margin-bottom: 20px;
+}
+
+.blocks-info h4 {
+  margin: 0 0 15px 0;
+  color: #333;
+}
+
+.block-info {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.block-icon {
+  font-size: 24px;
+  margin-right: 15px;
+}
+
+.block-details {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.block-title {
+  font-weight: 500;
+  color: #333;
+}
+
+.block-duration {
+  color: #666;
+  font-size: 14px;
+}
+
+.last-block-badge {
+  background: #4CAF50;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  margin-left: 10px;
+}
+
+.total-duration {
+  text-align: right;
+  font-weight: 500;
+  color: #333;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #3498db;
+  border-radius: 50%;
+  margin: 0 auto 15px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Стили для отображения ID сессии */
+.session-id-display {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.9);
+  padding: 8px 16px;
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  font-size: 14px;
+  color: #666;
+  z-index: 1000;
+}
+
+/* Обновляем стили кнопки сохранения */
+.save-button {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+/* Стиль для кнопки создания (зеленый) */
+.save-button.create {
+  background: #4CAF50;
+  color: white;
+}
+
+.save-button.create:hover {
+  background: #45a049;
+  transform: scale(1.05);
+}
+
+/* Стиль для кнопки обновления (желтый) */
+.save-button.update {
+  background: #FFC107;
+  color: #333;
+}
+
+.save-button.update:hover {
+  background: #FFA000;
+  transform: scale(1.05);
 }
  

@@ -31,9 +31,8 @@ const PUZZLE_PIECES = [
     id: 'custom',
     type: 'custom',
     title: 'Пользовательский блок',
-    icon: 'cube',
-    description: 'Создайте свой блок',
-    duration: 60
+    icon: '🔧',
+    description: 'Настраиваемый блок для произвольных действий'
   }
 ];
 
@@ -44,6 +43,15 @@ function SessionConstructor() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isInitialized, setIsInitialized] = useState(false);
   const [customBlocks, setCustomBlocks] = useState([]);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [saveStatus, setSaveStatus] = useState('saving'); // 'saving', 'success', 'error'
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [resetStatus, setResetStatus] = useState('confirming'); // 'confirming', 'resetting', 'success', 'error'
+  const [currentSessionId, setCurrentSessionId] = useState(null);
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [sessionInfo, setSessionInfo] = useState(null);
+  const [isLoadingInfo, setIsLoadingInfo] = useState(false);
+  const [isSessionSaved, setIsSessionSaved] = useState(false);
 
   const filteredPieces = PUZZLE_PIECES.filter(piece => 
     piece.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -170,78 +178,152 @@ function SessionConstructor() {
   };
 
   const handleResetSession = async () => {
-    if (window.confirm('Вы уверены, что хотите сбросить сессию?')) {
+    if (!showResetModal) {
+      setShowResetModal(true);
+      return;
+    }
+
+    if (resetStatus === 'confirming') {
+      setResetStatus('resetting');
+      
       try {
-        // Очищаем сессии в базе
-        await fetch('http://localhost:5000/api/session/clear', {
-          method: 'POST'
+        // Отправляем запрос на очистку всей таблицы сессий
+        const response = await fetch('http://localhost:5000/api/session/clear', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
         });
-        
+
+        if (!response.ok) {
+          throw new Error('Ошибка при очистке сессий');
+        }
+
         // Очищаем локальное состояние
         setSessionPieces([]);
-        localStorage.removeItem('sessionPieces');
+        setCurrentSessionId(null);
+        setIsSessionSaved(false);
+        setResetStatus('success');
         
+        setTimeout(() => {
+          const overlay = document.querySelector('.reset-modal-overlay');
+          if (overlay) {
+            overlay.classList.add('fade-out');
+          }
+          
+          setTimeout(() => {
+            setShowResetModal(false);
+            setResetStatus('confirming');
+          }, 300);
+        }, 1000);
+
       } catch (error) {
         console.error('Ошибка при сбросе сессии:', error);
+        setResetStatus('error');
+        
+        setTimeout(() => {
+          const overlay = document.querySelector('.reset-modal-overlay');
+          if (overlay) {
+            overlay.classList.add('fade-out');
+          }
+          
+          setTimeout(() => {
+            setShowResetModal(false);
+            setResetStatus('confirming');
+          }, 300);
+        }, 1000);
       }
     }
   };
 
   const handleSaveSession = async () => {
+    setShowSaveModal(true);
+    setSaveStatus('saving');
+    
     try {
-      const blocksWithDuration = sessionPieces.map(piece => {
-        const defaultDuration = {
-          'calm': 120,
-          'tetris': 60,
-          'dino': 60,
-          'custom': 60
-        };
+      // Добавим отладочный вывод текущего состояния
+      console.log('Текущее состояние sessionPieces:', sessionPieces);
 
-        const duration = piece.duration || defaultDuration[piece.type] || 60;
-        console.log(`Block ${piece.id} duration:`, {
-          original: piece.duration,
-          default: defaultDuration[piece.type],
-          final: duration
-        });
+      const sessionData = {
+        session_id: currentSessionId,
+        blocks: sessionPieces.map(piece => {
+          // Добавим отладочный вывод для каждого блока
+          console.log('Обработка блока:', {
+            id: piece.id,
+            type: piece.type,
+            currentDuration: piece.duration
+          });
 
-        return {
-          ...piece,
-          duration
-        };
-      });
+          return {
+            type: piece.type,
+            duration: piece.duration, // Используем значение напрямую без parseInt
+            is_last: piece.isLast || false,
+            name: PUZZLE_PIECES.find(p => p.type === piece.type)?.title || ''
+          };
+        })
+      };
 
-      // Считаем общую длительность сессии
-      const totalDuration = blocksWithDuration.reduce((sum, block) => sum + block.duration, 0);
-      const minutes = Math.floor(totalDuration / 60);
-      const seconds = totalDuration % 60;
-
-      console.log('Сохранение сессии:');
-      console.log('Блоки:', blocksWithDuration.map(block => ({
-        type: block.type,
-        title: block.title,
-        duration: block.duration
-      })));
-      console.log(`Общая длительность: ${minutes} мин ${seconds} сек (${totalDuration} сек)`);
+      console.log('Подготовленные данные для отправки:', sessionData);
 
       const response = await fetch('http://localhost:5000/api/session/save', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
-        body: JSON.stringify({
-          blocks: blocksWithDuration
-        })
+        body: JSON.stringify(sessionData)
       });
 
-      if (response.ok) {
-        alert('Сессия успешно сохранена');
-      } else {
-        const data = await response.json();
-        throw new Error(data.error || 'Ошибка при сохранении сессии');
+      console.log('Статус ответа:', response.status);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Ошибка от сервера:', errorData);
+        throw new Error(errorData.message || 'Ошибка при сохранении сессии');
       }
+
+      const data = await response.json();
+      console.log('Ответ сервера:', data);
+      
+      // Если получили ID - сохраняем его и помечаем сессию как сохраненную
+      if (data.session && data.session.id) {
+        setCurrentSessionId(data.session.id);
+        setIsSessionSaved(true);
+        
+        // Обновляем блоки, сохраняя текущие значения длительности
+        setSessionPieces(prev => prev.map(piece => ({
+          ...piece,
+          sessionId: data.session.id,
+          duration: piece.duration // Сохраняем текущую длительность
+        })));
+      }
+
+      setSaveStatus('success');
+      
+      setTimeout(() => {
+        const overlay = document.querySelector('.save-modal-overlay');
+        if (overlay) {
+          overlay.classList.add('fade-out');
+        }
+        
+        setTimeout(() => {
+          setShowSaveModal(false);
+        }, 300);
+      }, 1000);
+
     } catch (error) {
-      console.error('Ошбка:', error);
-      alert('Не удалось сохранить сессию: ' + error.message);
+      console.error('Ошибка при сохранении сессии:', error);
+      setSaveStatus('error');
+      setTimeout(() => {
+        const overlay = document.querySelector('.save-modal-overlay');
+        if (overlay) {
+          overlay.classList.add('fade-out');
+        }
+        
+        setTimeout(() => {
+          setShowSaveModal(false);
+        }, 300);
+      }, 1000);
     }
   };
 
@@ -305,36 +387,37 @@ function SessionConstructor() {
   }, [sessionPieces]);
 
   const handleSetDuration = async (pieceId, duration) => {
-    console.log('Обновление длительности блока:', {
-      pieceId,
-      duration,
-      block: sessionPieces.find(p => p.id === pieceId)
-    });
-
+    console.log('handleSetDuration вызван с:', { pieceId, duration });
+    
     try {
-      // Обновляем в БД
-      const response = await fetch('http://localhost:5000/api/session/update-duration', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          blockId: pieceId,
-          duration: parseInt(duration)
-        })
+      // Обновляем локальное состояние
+      setSessionPieces(prev => {
+        const newPieces = prev.map(piece => 
+          piece.id === pieceId 
+            ? { ...piece, duration: parseInt(duration) } 
+            : piece
+        );
+        console.log('Обновленное состояние sessionPieces:', newPieces);
+        return newPieces;
       });
 
-      if (!response.ok) {
-        throw new Error('Ошибка при обновлении длительности');
+      // Если есть ID сессии - отправляем обновление на сервер
+      if (currentSessionId) {
+        const response = await fetch(`http://localhost:5000/api/session/${currentSessionId}/update-block`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            blockId: pieceId,
+            duration: parseInt(duration)
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Ошибка при обновлении длительности');
+        }
       }
-
-      // Обновляем локальное состояние
-      setSessionPieces(prev => prev.map(piece => 
-        piece.id === pieceId 
-          ? { ...piece, duration: parseInt(duration) } 
-          : piece
-      ));
-
     } catch (error) {
       console.error('Ошибка при обновлении длительности:', error);
     }
@@ -346,35 +429,13 @@ function SessionConstructor() {
     ));
   };
 
-  // Функция для создания нового пользовательского блока
-  const handleCreateCustomBlock = () => {
-    const newBlock = {
-      id: `custom-${Date.now()}`,
-      type: 'custom',
-      title: 'Пользовательский блок',
-      icon: '',
-      duration: 60,
-      isDraggable: true
-    };
-    
-    setSessionPieces(prev => [...prev, newBlock]);
-  };
-
-  // Функция для обновления пользовательского блока
-  const handleUpdateCustomBlock = (blockId, updates) => {
-    setSessionPieces(prev => prev.map(piece => 
-      piece.id === blockId ? { ...piece, ...updates } : piece
-    ));
-  };
-
   // Обновляем рендер доступных блоков
   const renderAvailableBlocks = () => {
-    const standardBlocks = PUZZLE_PIECES.filter(piece => piece.type !== 'custom');
     return (
       <div className="available-pieces">
         <h3>Доступные элементы</h3>
         <div className="pieces-list">
-          {standardBlocks.map(piece => (
+          {PUZZLE_PIECES.map(piece => (
             <PuzzlePiece
               key={piece.id}
               {...piece}
@@ -384,13 +445,6 @@ function SessionConstructor() {
               onSetDuration={handleSetDuration}
             />
           ))}
-          <button 
-            className="add-custom-block"
-            onClick={handleCreateCustomBlock}
-          >
-            <i className="fas fa-plus"></i>
-            <span>Добавить блок</span>
-          </button>
         </div>
       </div>
     );
@@ -435,8 +489,58 @@ function SessionConstructor() {
       case 'calm': return '😌';
       case 'tetris': return '🟦';
       case 'dino': return '🦖';
-      default: return '📦';
+      case 'custom': return '🔧';
+      default: return '';
     }
+  };
+
+  // Обновляем функцию fetchSessionInfo
+  const fetchSessionInfo = async () => {
+    // Проверяем наличие блоков вместо проверки ID
+    if (sessionPieces.length === 0) {
+      setSessionInfo({ error: 'Сессия пуста' });
+      return;
+    }
+
+    setIsLoadingInfo(true);
+    try {
+      // Получаем активную сессию
+      const response = await fetch('http://localhost:5000/api/session/active');
+      if (!response.ok) {
+        throw new Error('Ошибка при получении информации о сессии');
+      }
+      const data = await response.json();
+      
+      // Преобразуем данные в нужный формат
+      const sessionInfo = {
+        id: data.session.id,
+        blocks: data.session.blocks.map(block => ({
+          type: block.type,
+          duration: block.duration,
+          isLast: block.is_last
+        })),
+        totalDuration: data.session.blocks.reduce((sum, block) => sum + block.duration, 0)
+      };
+      
+      setSessionInfo(sessionInfo);
+      
+      // Сохраняем ID сессии если его нет
+      if (!currentSessionId) {
+        setCurrentSessionId(data.session.id);
+      }
+
+    } catch (error) {
+      console.error('Ошибка при загрузке информации:', error);
+      setSessionInfo({ error: error.message });
+    } finally {
+      setIsLoadingInfo(false);
+    }
+  };
+
+  // Добавляем обработчик открытия модального окна
+  const handleInfoClick = () => {
+    setShowInfoModal(true);
+    fetchSessionInfo();
   };
 
   return (
@@ -462,7 +566,7 @@ function SessionConstructor() {
           {sessionPieces.length === 0 && isInitialized && (
             <div className={`empty-slot-hint ${isDragging ? 'dragging' : ''}`}>
               {isDragging ? 
-                "Отпустите, чтобы создать начал�� цепочки" : 
+                "Отпустите, чтобы создать начало цепочки" : 
                 "Перетащите элемент, чтобы начать"
               }
             </div>
@@ -489,12 +593,31 @@ function SessionConstructor() {
               <>
                 <div className="canvas-controls">
                   <button onClick={() => zoomIn()}>+</button>
-                  <button onClick={() => zoomOut()}>-</button>
-                  <button onClick={() => {
-                    resetTransform();
-                    centerContent();
-                  }}>Сбросить вид</button>
+                  <button onClick={() => zoomOut()}>−</button>
+                  <button 
+                    onClick={() => {
+                      resetTransform();
+                      centerContent();
+                    }}
+                  >
+                    Сбросить
+                  </button>
                 </div>
+
+                {/* Отдельная кнопка информации */}
+                <button 
+                  className="info-button"
+                  onClick={handleInfoClick}
+                >
+                  <i className="fas fa-info-circle"></i>
+                </button>
+
+                {currentSessionId && (
+                  <div className="session-id-display">
+                    ID сессии: {currentSessionId}
+                  </div>
+                )}
+
                 <TransformComponent>
                   <div className="canvas">
                     {sessionPieces.length > 0 ? (
@@ -512,6 +635,7 @@ function SessionConstructor() {
                             isDragging={isDragging}
                             hasLastPiece={sessionPieces.some(p => p.isLast)}
                             availableBlocks={PUZZLE_PIECES}
+                            onSetDuration={handleSetDuration}
                           />
                         ))}
                         {!sessionPieces.some(piece => piece.isLast) && (
@@ -541,21 +665,21 @@ function SessionConstructor() {
 
         {/* Копки управления сессией */}
         <div className="session-controls">
-          <button 
-            className="reset-button"
-            onClick={handleResetSession}
-          >
-            Сбросить сессию
-          </button>
+          {sessionPieces.length > 0 && (
+            <button 
+              className="reset-button"
+              onClick={handleResetSession}
+            >
+              Сбросить сессию
+            </button>
+          )}
           {sessionPieces.some(piece => piece.isLast) && (
-            <>
-              <button 
-                className="save-button"
-                onClick={handleSaveSession}
-              >
-                Сохранить сессию
-              </button>
-            </>
+            <button 
+              className={`save-button ${isSessionSaved ? 'update' : 'create'}`}
+              onClick={handleSaveSession}
+            >
+              {isSessionSaved ? 'Обновить данные сессии' : 'Создать сессию'}
+            </button>
           )}
         </div>
 
@@ -588,6 +712,151 @@ function SessionConstructor() {
                 ))}
               </div>
               <button onClick={() => setShowModal(false)}>Закрыть</button>
+            </div>
+          </div>
+        )}
+
+        {showSaveModal && (
+          <div className="save-modal-overlay">
+            <div className="save-modal">
+              {saveStatus === 'saving' && (
+                <>
+                  <div className="save-spinner"></div>
+                  <p>{isSessionSaved ? 'Обновление сессии...' : 'Создание сессии...'}</p>
+                </>
+              )}
+              {saveStatus === 'success' && (
+                <>
+                  <div className="save-success">
+                    <i className="fas fa-check-circle"></i>
+                  </div>
+                  <p>{isSessionSaved ? 'Сессия успешно обновлена' : 'Сессия успешно создана'}</p>
+                </>
+              )}
+              {saveStatus === 'error' && (
+                <>
+                  <div className="save-error">
+                    <i className="fas fa-exclamation-circle"></i>
+                  </div>
+                  <p>Ошибка при {isSessionSaved ? 'обновлении' : 'создании'} сессии</p>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {showResetModal && (
+          <div className="reset-modal-overlay">
+            <div className="reset-modal">
+              {resetStatus === 'confirming' && (
+                <>
+                  <div className="reset-warning">
+                    <i className="fas fa-exclamation-triangle"></i>
+                  </div>
+                  <p className="reset-message">Вы уверены, что хотите сбросить сессию?</p>
+                  <p className="reset-submessage">Это действие нельзя будет отменить</p>
+                  <div className="reset-buttons">
+                    <button 
+                      className="cancel-button"
+                      onClick={() => setShowResetModal(false)}
+                    >
+                      Отмена
+                    </button>
+                    <button 
+                      className="confirm-button"
+                      onClick={() => handleResetSession()}
+                    >
+                      <i className="fas fa-trash-alt"></i>
+                      Сбросить
+                    </button>
+                  </div>
+                </>
+              )}
+              {resetStatus === 'resetting' && (
+                <>
+                  <div className="save-spinner"></div>
+                  <p>Сброс сессии...</p>
+                </>
+              )}
+              {resetStatus === 'success' && (
+                <>
+                  <div className="save-success">
+                    <i className="fas fa-check-circle"></i>
+                  </div>
+                  <p>Сессия успешно сброшена</p>
+                </>
+              )}
+              {resetStatus === 'error' && (
+                <>
+                  <div className="save-error">
+                    <i className="fas fa-exclamation-circle"></i>
+                  </div>
+                  <p>Ошибка при сбросе сессии</p>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {showInfoModal && (
+          <div className="info-modal-overlay">
+            <div className="info-modal">
+              <div className="info-modal-header">
+                <h3>Информация о сессии</h3>
+                <button 
+                  className="close-button"
+                  onClick={() => setShowInfoModal(false)}
+                >
+                  <i className="fas fa-times"></i>
+                </button>
+              </div>
+              
+              <div className="info-modal-content">
+                {isLoadingInfo ? (
+                  <div className="info-loading">
+                    <div className="spinner"></div>
+                    <p>Загрузка информации...</p>
+                  </div>
+                ) : sessionInfo?.error ? (
+                  <div className="info-error">
+                    <i className="fas fa-exclamation-circle"></i>
+                    <p>{sessionInfo.error}</p>
+                  </div>
+                ) : sessionInfo && sessionInfo.blocks ? (
+                  <>
+                    <div className="session-id">
+                      ID сессии: {sessionInfo.id}
+                    </div>
+                    <div className="blocks-info">
+                      <h4>Блоки сессии:</h4>
+                      {sessionInfo.blocks.map((block, index) => (
+                        <div key={index} className="block-info">
+                          <div className="block-icon">
+                            {getBlockIcon(block.type)}
+                          </div>
+                          <div className="block-details">
+                            <span className="block-title">
+                              {PUZZLE_PIECES.find(p => p.type === block.type)?.title}
+                            </span>
+                            <span className="block-duration">
+                              {block.duration} сек
+                            </span>
+                          </div>
+                          {block.isLast && (
+                            <div className="last-block-badge">
+                              Финальный блок
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="total-duration">
+                      Общая длительность: {sessionInfo.totalDuration} сек 
+                      ({Math.floor(sessionInfo.totalDuration / 60)} мин {sessionInfo.totalDuration % 60} сек)
+                    </div>
+                  </>
+                ) : null}
+              </div>
             </div>
           </div>
         )}
