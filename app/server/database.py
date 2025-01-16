@@ -124,6 +124,12 @@ class Database:
                 VALUES (?, ?, ?, ?)
             ''', block_types)
             
+            # Добавляем новый тип блока в таблицу block_types, если её используете
+            cursor.execute('''
+                INSERT OR IGNORE INTO block_types (type_code, name, description, duration)
+                VALUES ('stroop_fast', 'Быстрый тест Струпа', 'Быстрый тест Струпа', 60)
+            ''')
+            
             conn.commit()
 
     def register_subject(self, full_name, ip_address, avatar=None):

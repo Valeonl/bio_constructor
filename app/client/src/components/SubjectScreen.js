@@ -4,6 +4,7 @@ import { ReactComponent as SkullIcon } from '../icon/skull.svg';
 import { ReactComponent as LightningIcon } from '../icon/lightning.svg';
 import { useConnection } from '../context/ConnectionContext';
 import './SubjectScreen.css';
+import StroopTest from './StroopTest';
 
 // Импортируем аватарки
 import { ReactComponent as CatAvatar } from '../avatars/cat.svg';
@@ -165,20 +166,15 @@ function SubjectScreen() {
   const startSession = (blocks) => {
     const runBlock = async (index) => {
       if (index >= blocks.length) {
-        // Сессия завершена
         setSessionState('finished');
         await updateStatus('finished_session');
-        setTimeout(() => {
-          window.location.href = '/';
-        }, 3000);
         return;
       }
 
       const block = blocks[index];
       setCurrentBlock(block);
       
-      // Используем duration из блока
-      const blockDuration = block.duration || 60; // 60 секунд по умолчанию, если duration не задан
+      const blockDuration = block.duration || 60;
       console.log(`Запуск блока ${index + 1}/${blocks.length}:`, {
         type: block.type,
         duration: blockDuration
@@ -187,23 +183,29 @@ function SubjectScreen() {
       setTimeLeft(blockDuration);
       setCurrentBlockIndex(index);
 
-      // Запускаем таймер для текущего блока
+      // Используем время начала блока для точного отсчета
+      const startTime = Date.now();
+      const endTime = startTime + (blockDuration * 1000);
+
       const timer = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            // Показываем анимацию перехода
-            setIsTransitioning(true);
-            setTimeout(() => {
-              setIsTransitioning(false);
-              // Запускаем следующий блок
-              runBlock(index + 1);
-            }, 1000);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+        const now = Date.now();
+        const remaining = Math.ceil((endTime - now) / 1000);
+        
+        if (remaining <= 0) {
+          clearInterval(timer);
+          setIsTransitioning(true);
+          setTimeout(() => {
+            setIsTransitioning(false);
+            runBlock(index + 1);
+          }, 1000);
+          setTimeLeft(0);
+        } else {
+          setTimeLeft(remaining);
+        }
+      }, 100); // Проверяем чаще для более точного отсчета
+
+      // Очистка таймера при размонтировании
+      return () => clearInterval(timer);
     };
 
     // Выводим информацию о всей сессии
@@ -250,7 +252,9 @@ function SubjectScreen() {
       case 'calm':
         return 'heart';
       case 'tetris':
-        return 'th-large';
+        return 'bullseye';
+      case 'stroop_fast':
+        return 'bolt';
       case 'dino':
         return 'dragon';
       case 'custom':
@@ -265,7 +269,9 @@ function SubjectScreen() {
       case 'calm':
         return 'Спокойный этап';
       case 'tetris':
-        return 'Игра Тетрис';
+        return 'Тест Струпа';
+      case 'stroop_fast':
+        return 'Быстрый тест Струпа';
       case 'dino':
         return 'Игра Динозаврик';
       case 'custom':
@@ -324,12 +330,18 @@ function SubjectScreen() {
                     <span className="block-number">Блок {currentBlockIndex + 1}</span>
                     <h2>{currentBlock.title}</h2>
                   </div>
-                  <i className={`fas fa-${getBlockIcon(currentBlock.type)}`}></i>
-                  <h2>{getBlockTitle(currentBlock.type)}</h2>
-                  {currentBlock.type === 'calm' ? (
-                    <p>Пожалуйста, сохраняйте спокойствие...</p>
+                  {currentBlock.type === 'tetris' || currentBlock.type === 'stroop_fast' ? (
+                    <StroopTest isFast={currentBlock.type === 'stroop_fast'} />
                   ) : (
-                    <p>Этап: {getBlockTitle(currentBlock.type)}</p>
+                    <>
+                      <i className={`fas fa-${getBlockIcon(currentBlock.type)}`}></i>
+                      <h2>{getBlockTitle(currentBlock.type)}</h2>
+                      {currentBlock.type === 'calm' ? (
+                        <p>Пожалуйста, сохраняйте спокойствие...</p>
+                      ) : (
+                        <p>Этап: {getBlockTitle(currentBlock.type)}</p>
+                      )}
+                    </>
                   )}
                 </>
               )}
@@ -342,9 +354,6 @@ function SubjectScreen() {
           <div className="finished-screen">
             <h2>Сессия завершена</h2>
             <p>Спасибо за участие!</p>
-            <div className="redirect-message">
-              Перенаправление на главную страницу...
-            </div>
           </div>
         );
 

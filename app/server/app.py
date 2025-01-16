@@ -36,6 +36,15 @@ subjects_db = {}
 # Добавляем хранилище для сессий
 sessions_db = {}
 
+# Добавим константу с допустимыми типами блоков
+VALID_BLOCK_TYPES = {
+    'calm': 'Спокойный этап',
+    'tetris': 'Тест Струпа',
+    'stroop_fast': 'Быстрый тест Струпа',  # Добавляем новый тип
+    'dino': 'Игра Динозаврик',
+    'custom': 'Пользовательский блок'
+}
+
 def get_random_bpm(base_bpm, pattern, precise_mode):
     if precise_mode:
         # В режиме точной настройки колебания ±10 от заданного значения
@@ -323,18 +332,17 @@ def save_session():
     try:
         data = request.json
         blocks = data.get('blocks')
-        session_id = data.get('session_id')  # Получаем session_id из запроса
+        session_id = data.get('session_id')
         
         if not blocks:
             return jsonify({'error': 'No blocks provided'}), 400
         
-        # Проверяем наличие необходимых полей
+        # Проверяем валидность типов блоков
         for block in blocks:
-            if 'type' not in block:
-                return jsonify({'error': 'Missing type in block'}), 400
+            if block['type'] not in VALID_BLOCK_TYPES:
+                return jsonify({'error': f'Invalid block type: {block["type"]}'}), 400
         
         if session_id:
-            # Если есть session_id, обновляем существующую сессию
             db.update_session(session_id, blocks)
             return jsonify({
                 'status': 'success',
@@ -344,7 +352,6 @@ def save_session():
                 }
             })
         else:
-            # Если session_id нет, создаём новую сессию
             new_session_id = db.save_session(blocks)
             return jsonify({
                 'status': 'success',

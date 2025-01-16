@@ -16,9 +16,16 @@ const PUZZLE_PIECES = [
   {
     id: 'tetris',
     type: 'tetris',
-    title: 'Игра Тетрис',
-    icon: '🟦',
-    description: 'Классическая игра Тетрис'
+    title: 'Тест Струпа',
+    icon: '🎯',
+    description: 'Тест на внимательность и скорость реакции'
+  },
+  {
+    id: 'stroop_fast',
+    type: 'stroop_fast',
+    title: 'Быстрый тест Струпа',
+    icon: '⚡',
+    description: 'Ускоренный тест на внимательность и скорость реакции'
   },
   {
     id: 'dino',
@@ -462,7 +469,7 @@ function SessionConstructor() {
           const pieces = data.session.blocks.map(block => ({
             id: `${block.type}-${block.id}`,
             type: block.type,
-            title: block.name,
+            title: PUZZLE_PIECES.find(p => p.type === block.type)?.title || block.name,
             icon: getBlockIcon(block.type),
             duration: block.duration,
             isLast: block.is_last
@@ -487,7 +494,8 @@ function SessionConstructor() {
   const getBlockIcon = (type) => {
     switch (type) {
       case 'calm': return '😌';
-      case 'tetris': return '🟦';
+      case 'tetris': return '🎯';
+      case 'stroop_fast': return '⚡';
       case 'dino': return '🦖';
       case 'custom': return '🔧';
       default: return '';
