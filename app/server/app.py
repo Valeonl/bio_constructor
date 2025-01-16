@@ -6,6 +6,10 @@ import datetime
 import socket
 from database import Database
 import os
+import numpy as np
+from pyOpenBCI import OpenBCICyton
+import scipy.signal
+from flask import jsonify
 
 app = Flask(__name__)
 CORS(app, resources={
@@ -59,6 +63,43 @@ def get_random_bpm(base_bpm, pattern, precise_mode):
         }
         min_bpm, max_bpm = pattern_ranges.get(pattern, (60, 80))
         return random.randint(min_bpm, max_bpm)
+    
+def get_ecg_realtime_data(com, channel):
+    """
+    Считывает данные с ЭКГ-устройства (OpenBCI) и возвращает их.
+    
+    :param com: Порт подключения устройства (например, 'COM8').
+    :param channel: Номер канала для считывания данных (например, 5 для канала 5).
+    :return: Массив данных с выбранного канала.
+    """
+    try:
+        # Инициализация OpenBCI
+        board = OpenBCICyton(port=com)
+
+        # Создаем буфер для хранения данных
+        data_buffer = []
+
+        # Функция обработки данных
+        def process_sample(sample):
+            # Сохраняем данные с выбранного канала
+            data_buffer.append(sample.channels_data[channel - 1])  # Каналы нумеруются с 0
+
+        # Начинаем поток данных
+        board.start_stream(process_sample)
+
+        # Ждем, пока накопится достаточно данных (например, 250 точек = 1 секунда)
+        while len(data_buffer) < 250:
+            time.sleep(0.01)  # Небольшая задержка, чтобы не нагружать процессор
+
+        # Останавливаем поток данных
+        board.stop_stream()
+
+        # Возвращаем данные
+        return np.array(data_buffer)
+
+    except Exception as e:
+        print(f"Ошибка при считывании данных с ЭКГ-устройства: {e}")
+        return np.array([])  # Возвращаем пустой массив в случае ошибки
 
 @app.route('/api/ecg', methods=['GET'])
 def get_ecg_data():
@@ -66,18 +107,19 @@ def get_ecg_data():
         if not signal_settings['is_enabled']:
             return jsonify({'data': [], 'bpm': 0})
         
-        current_bpm = get_random_bpm(
-            signal_settings['bpm'], 
-            signal_settings['pattern'],
-            signal_settings['precise_mode']
-        )
+        # Считываем данные с устройства OpenBCI
+        ecg_data = get_ecg_realtime_data(com='COM8', channel=5)  # Укажите ваш порт и канал
         
-        data = generate_ecg_signal(
-            pattern=signal_settings['pattern'],
-            target_bpm=current_bpm
-        )
+        # Если данные отсутствуют, возвращаем пустой массив
+        if len(ecg_data) == 0:
+            return jsonify({'data': [], 'bpm': 0})
+        
+        # Рассчитываем ЧСС (примерная логика)
+        peaks, _ = scipy.signal.find_peaks(ecg_data, distance=250)  # Поиск пиков
+        current_bpm = len(peaks) * 6  # Примерный расчет ЧСС (6 * количество пиков в секунду)
+        
         return jsonify({
-            'data': data,
+            'data': ecg_data.tolist(),  # Преобразуем в список для JSON
             'bpm': current_bpm
         })
     except Exception as e:

@@ -43,7 +43,7 @@ function SelectionScreen() {
 
         <Link to="/admin" className="role-card">
           <AdminIcon className="role-icon" />
-          <p className="role-label">Администратор</p>
+          <p className="role-label">Я Администратор</p>
         </Link>
       </div>
     </div>
